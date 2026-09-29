@@ -1,0 +1,84 @@
+---
+- name: Configure Automation Controller inventory and sources
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    controller_organization: Default
+    controller_project: Azure Ansible Inventory Hierarchy
+    controller_project_scm_url: "https://github.com/jritter/azure-ansible-inventory-hierarchy.git"
+    controller_project_scm_branch: main
+    controller_inventory: Azure Lab
+    # verbosity: 0 = Warning, 1 = Info, 2 = Debug
+    controller_inventory_source_verbosity: 2
+    # The playbook assumes that this credential exists and holds the relevant information to access your Azure resources.
+    azure_rm_credential: Azure
+
+
+  tasks:
+    - name: Create the project
+      ansible.controller.project:
+        name: "{{ controller_project }}"
+        organization: "{{ controller_organization }}"
+        scm_type: git
+        scm_url: "{{ controller_project_scm_url }}"
+        scm_branch: "{{ controller_project_scm_branch }}"
+        scm_credential: "{{ controller_scm_credential | default(omit) }}"
+        scm_clean: true
+        scm_update_on_launch: true
+        state: present
+
+    - name: Create the inventory
+      ansible.controller.inventory:
+        name: "{{ controller_inventory }}"
+        organization: "{{ controller_organization }}"
+        state: present
+
+    # This inventory source points to the azure inventory plugin configuration.
+    # When syncing this inventory source, it will assign group membership based on Azure tags,
+    # which don't reflect a hierarchy.
+    - name: Create inventory source from azure_rm.yml
+      ansible.controller.inventory_source:
+        name: "{{ controller_inventory }} - Azure RM"
+        inventory: "{{ controller_inventory }}"
+        source: scm
+        source_project: "{{ controller_project }}"
+        source_path: inventory/azure_rm.yml
+        credential: "{{ azure_rm_credential }}"
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
+        state: present
+
+    # This inventory source points to a file within the git repository.
+    # It only contains the group hierarchy definition.
+    - name: Create inventory source from group_hierarchy.yml
+      ansible.controller.inventory_source:
+        name: "{{ controller_inventory }} - Group Hierarchy"
+        inventory: "{{ controller_inventory }}"
+        source: scm
+        source_project: "{{ controller_project }}"
+        source_path: inventory/group_hierarchy.yml
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
+        state: present
+
+
+    # This inventory source points to the inventory directory.
+    # With that configuration, the inventory sync takes all files in the inventory
+    # directory into account, and combines them into a single inventory.
+    # For example, This allows you to define the group hierarchy in a file,
+    # while the group memberships are defined based on Azure Tags.
+    - name: Create inventory source from inventory/ directory
+      ansible.controller.inventory_source:
+        name: "{{ controller_inventory }} - Combined"
+        inventory: "{{ controller_inventory }}"
+        source: scm
+        source_project: "{{ controller_project }}"
+        source_path: inventory/
+        credential: "{{ azure_rm_credential }}"
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
+        state: present

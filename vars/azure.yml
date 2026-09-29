@@ -1,0 +1,24 @@
+---
+# Edit these before running playbooks/deploy_vms.yml.
+# Paths and resource names only. Do not put key material or credentials here.
+
+azure_location: <azure_location>
+azure_resource_group: <azure_resource_group>
+azure_network_resource_group: <azure_network_resource_group>
+azure_vnet_name: <azure_vnet_name>
+azure_subnet_name: <azure_subnet_name>
+azure_ssh_public_key_file: <azure_ssh_public_key_file>
+
+# There shouldn't be a need to change these.
+
+azure_admin_username: cloud-user
+azure_vm_size: Standard_B2s
+azure_image_sku: 10-lvm-gen2
+
+azure_vms:
+  - name: web01
+    ansible_group: web
+  - name: web02
+    ansible_group: web
+  - name: db01
+    ansible_group: db

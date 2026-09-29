@@ -1,0 +1,37 @@
+---
+- name: Deploy RHEL 10 web and database VMs
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+    - name: Deploy virtual machines
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{ azure_resource_group }}"
+        location: "{{ azure_location }}"
+        name: "{{ item.name }}"
+        vm_size: "{{ azure_vm_size }}"
+        managed_disk_type: Standard_LRS
+        os_disk_caching: ReadWrite
+        admin_username: "{{ azure_admin_username }}"
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: "/home/{{ azure_admin_username }}/.ssh/authorized_keys"
+            key_data: "{{ lookup('file', azure_ssh_public_key_file) }}"
+        image:
+          publisher: RedHat
+          offer: RHEL
+          sku: "{{ azure_image_sku }}"
+          version: latest
+        virtual_network_resource_group: "{{ azure_network_resource_group }}"
+        virtual_network_name: "{{ azure_vnet_name }}"
+        subnet_name: "{{ azure_subnet_name }}"
+        public_ip_allocation_method: Static
+        open_ports:
+          - "22"
+        tags:
+          ansible_group: "{{ item.ansible_group }}"
+      loop: "{{ azure_vms }}"
+      loop_control:
+        label: "{{ item.name }}"
