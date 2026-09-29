@@ -3,3 +3,4 @@ all:
     linux:
       children:
         web:
+        db:
