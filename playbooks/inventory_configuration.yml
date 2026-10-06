@@ -49,6 +49,9 @@
         update_on_launch: true
         verbosity: "{{ controller_inventory_source_verbosity }}"
         state: present
+        source_vars:
+          plain_host_names: false
+          leading_separator: true
 
     # This inventory source points to a file within the git repository.
     # It only contains the group hierarchy definition.
@@ -82,3 +85,6 @@
         update_on_launch: true
         verbosity: "{{ controller_inventory_source_verbosity }}"
         state: present
+        source_vars:
+          plain_host_names: false
+          leading_separator: true

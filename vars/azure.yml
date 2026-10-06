@@ -5,8 +5,10 @@
 azure_location: <azure_location>
 azure_resource_group: <azure_resource_group>
 azure_network_resource_group: <azure_network_resource_group>
-azure_vnet_name: <azure_vnet_name>
-azure_subnet_name: <azure_subnet_name>
+azure_vnet_name: ansible-vnet
+azure_vnet_prefix: 10.0.0.0/23
+azure_subnet_name: ansible-subnet
+azure_subnet_prefix: 10.0.0.0/24
 azure_ssh_public_key_file: <azure_ssh_public_key_file>
 
 # There shouldn't be a need to change these.
