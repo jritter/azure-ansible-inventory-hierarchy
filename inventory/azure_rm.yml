@@ -1,6 +1,9 @@
+# Documentation:
+# https://docs.ansible.com/projects/ansible/latest/collections/azure/azcollection/azure_rm_inventory.html
+
 plugin: azure.azcollection.azure_rm
 auth_source: auto
-plain_host_names: "{{ plain_host_names }}"
-leading_separator: "{{ leading_separator }}"
+plain_host_names: true
+leading_separator: false
 keyed_groups:
   - key: tags['ansible_group']

@@ -28,6 +28,11 @@
         scm_update_on_launch: true
         state: present
 
+    # ######################################################################
+    # All in one inventory containing 3 inventory sources:
+    # - Azure RM Configuration file from Git
+    # - Group Hierarchy from Git
+    # - Combined inventory that includes both the above
     - name: Create the inventory
       ansible.controller.inventory:
         name: "{{ controller_inventory }}"
@@ -49,9 +54,6 @@
         update_on_launch: true
         verbosity: "{{ controller_inventory_source_verbosity }}"
         state: present
-        source_vars:
-          plain_host_names: false
-          leading_separator: true
 
     # This inventory source points to a file within the git repository.
     # It only contains the group hierarchy definition.
@@ -85,6 +87,79 @@
         update_on_launch: true
         verbosity: "{{ controller_inventory_source_verbosity }}"
         state: present
+
+    # ######################################################################
+    # Inventory per source
+    # - Group Hierarchy from Git
+    # - Azure RM
+
+    # Group Hierarchy inventory from Git
+    - name: Create the Group Hierarchy inventory
+      ansible.controller.inventory:
+        name: "{{ controller_inventory }} - Group Hierarchy Only"
+        organization: "{{ controller_organization }}"
+        state: present
+
+    - name: Create inventory source for Group Hierarchy Only
+      ansible.controller.inventory_source:
+        name: "{{ controller_inventory }} - Group Hierarchy Only - Source"
+        inventory: "{{ controller_inventory }} - Group Hierarchy Only"
+        source: scm
+        source_project: "{{ controller_project }}"
+        source_path: inventory/group_hierarchy.yml
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
+        state: present
+
+
+    # Azure RM inventory from Azure RM Inventory source type
+    - name: Create the Azure RM inventory
+      ansible.controller.inventory:
+        name: "{{ controller_inventory }} - Azure RM Only"
+        organization: "{{ controller_organization }}"
+        state: present
+
+    - name: Create inventory source for Azure RM Only
+      ansible.controller.inventory_source:
+        name: "{{ controller_inventory }} - Azure RM Only - Source"
+        inventory: "{{ controller_inventory }} - Azure RM Only"
+        source: azure_rm # This is different from the example above, we are not pointing to the azure_rm.yml file
+        credential: "{{ azure_rm_credential }}"
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
+        state: present
+        source_vars: # The plugin can be parametrized here, no need for a file in Git
+          plain_host_names: true
+          leading_separator: false
+          keyed_groups:
+            - key: tags['ansible_group']
+
+    # The constructed inventory merges both the Azure RM inventory and the Group Hierarchy in a consistent way.
+    # The Job templates are pointing to the constructed inventory, not the individual inventories.
+    # Documentation:
+    # https://docs.ansible.com/projects/ansible/latest/collections/ansible/builtin/constructed_inventory.html
+    # Blog Post:
+    # https://www.redhat.com/en/blog/how-to-use-the-new-constructed-inventory-feature-in-aap-2.4
+    #
+    - name: Create the Combined Constructed inventory
+      ansible.controller.inventory:
+        name: "{{ controller_inventory }} - Constructed"
+        organization: "{{ controller_organization }}"
+        kind: constructed
+        input_inventories:
+          - "{{ controller_inventory }} - Group Hierarchy Only"
+          - "{{ controller_inventory }} - Azure RM Only"
+        state: present
+
+    - name: Configure the Constructed inventory source
+      ansible.controller.inventory_source:
+        name: "Auto-created source for: {{ controller_inventory }} - Constructed"
+        inventory: "{{ controller_inventory }} - Constructed"
+        overwrite: true
+        update_on_launch: true
+        verbosity: "{{ controller_inventory_source_verbosity }}"
         source_vars:
-          plain_host_names: false
-          leading_separator: true
+          plugin: constructed
+        state: present
